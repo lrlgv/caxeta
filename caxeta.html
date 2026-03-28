@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Caxeta</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --green-deep: #0d3320;
+  --bg: #0a2818;
+  --text: #f5edd6;
+  --text-dim: #8a7050;
+  --panel: rgba(26,92,53,0.28);
+  --border: rgba(201,168,76,0.2);
+  --red: #e74c3c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  min-height: 100vh;
+  background-image: radial-gradient(ellipse at 20% 10%, rgba(45,122,79,0.18) 0%, transparent 55%);
+}
+.screen { display: none; flex-direction: column; min-height: 100vh; }
+.screen.active { display: flex; }
+.hdr { text-align: center; padding: 22px 16px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.hdr h1 { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--gold); letter-spacing: 6px; text-transform: uppercase; }
+.hdr p { color: var(--text-dim); font-size: 0.72rem; margin-top: 3px; font-family: 'DM Mono', monospace; letter-spacing: 1px; }
+.body { flex: 1; overflow-y: auto; padding: 14px; -webkit-overflow-scrolling: touch; }
+.foot { padding: 10px 14px 28px; flex-shrink: 0; border-top: 1px solid var(--border); background: rgba(10,40,24,0.97); display: flex; gap: 8px; }
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+.ptitle { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 14px; border-radius: 12px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s; touch-action: manipulation; width: 100%; }
+.btn:active { transform: scale(0.97); opacity: 0.9; }
+.btn-p { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--green-deep); flex: 1; }
+.btn-p:disabled { opacity: 0.35; }
+.btn-s { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+.btn-d { background: rgba(192,57,43,0.15); color: var(--red); border: 1px solid rgba(192,57,43,0.3); margin-top: 8px; }
+.btn-icon { width: 48px; height: 48px; flex-shrink: 0; border-radius: 10px; padding: 0; font-size: 1.3rem; }
+.btn-back { width: 48px; height: 48px; flex-shrink: 0; border-radius: 10px; padding: 0; font-size: 1.2rem; background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+
+/* Setup */
+.inp-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.inp { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(201,168,76,0.25); border-radius: 10px; padding: 13px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 1rem; outline: none; -webkit-appearance: none; }
+.inp:focus { border-color: var(--gold); }
+.inp::placeholder { color: var(--text-dim); }
+.chip { display: flex; align-items: center; gap: 10px; background: rgba(45,122,79,0.25); border: 1px solid rgba(201,168,76,0.15); border-radius: 10px; padding: 11px 12px; margin-bottom: 7px; animation: si 0.2s ease; }
+.chip .cn { font-weight: 600; flex: 1; }
+.chip .co { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-dim); }
+.chip .cx { background: none; border: none; color: var(--text-dim); font-size: 1.4rem; padding: 2px 6px; cursor: pointer; line-height: 1; }
+.cfg-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.cfg-row:last-child { border-bottom: none; }
+.cfg-row span { font-size: 0.9rem; }
+.num-inp { width: 80px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px; color: var(--text); font-size: 1rem; text-align: center; outline: none; -webkit-appearance: none; }
+
+/* Player rows */
+.pr { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.07); border-radius: 11px; padding: 12px 13px; margin-bottom: 8px; transition: all 0.2s; }
+.pr.elim { opacity: 0.38; border-color: rgba(192,57,43,0.3); }
+.pr.borr { border-color: rgba(231,76,60,0.5); background: rgba(231,76,60,0.07); }
+.pr.win { border-color: var(--gold); background: rgba(201,168,76,0.09); }
+.p-ord { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-dim); width: 16px; flex-shrink: 0; }
+.p-nm { font-weight: 600; font-size: 0.97rem; flex: 1; }
+.p-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+.tag { font-size: 0.58rem; font-family: 'DM Mono', monospace; letter-spacing: 0.8px; padding: 2px 7px; border-radius: 20px; text-transform: uppercase; }
+.t-b { background: rgba(231,76,60,0.2); color: var(--red); border: 1px solid rgba(231,76,60,0.4); }
+.t-d { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.35); }
+.t-e { background: rgba(100,100,100,0.15); color: #888; border: 1px solid rgba(100,100,100,0.3); }
+.t-l { background: rgba(52,152,219,0.15); color: #5dade2; border: 1px solid rgba(52,152,219,0.35); }
+.p-pts { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--gold); min-width: 30px; text-align: right; }
+.p-pts.low { color: var(--red); }
+
+/* Top bar */
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.badge { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 2px; color: var(--gold); background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 5px 12px; }
+.dlr { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--text-dim); display: flex; align-items: center; gap: 5px; }
+.dlr-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+
+/* Queda players */
+.qp { background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 13px; margin-bottom: 8px; transition: all 0.2s; }
+.qp.borr-f { border-color: rgba(231,76,60,0.6); background: rgba(231,76,60,0.08); }
+.qp-top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.qp-nm { font-weight: 600; flex: 1; }
+.qp-pts { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--gold); }
+.qp-pts.low { color: var(--red); }
+.qp-btns { display: flex; gap: 8px; }
+.qb { flex: 1; padding: 10px; border-radius: 9px; border: 1px solid transparent; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s; touch-action: manipulation; }
+.qb:active { transform: scale(0.96); }
+.qb-y { background: rgba(45,122,79,0.22); color: #5dde8f; border-color: rgba(45,200,100,0.2); }
+.qb-y.on { background: rgba(45,180,90,0.32); border-color: #5dde8f; }
+.qb-n { background: rgba(100,100,100,0.12); color: var(--text-dim); border-color: rgba(100,100,100,0.2); }
+.qb-n.on { background: rgba(100,100,100,0.22); border-color: #888; color: var(--text); }
+.borr-note { font-size: 0.72rem; color: var(--red); font-family: 'DM Mono', monospace; margin-top: 5px; }
+
+/* Result */
+.rp { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.07); border-radius: 11px; padding: 12px 13px; margin-bottom: 8px; }
+.rp-nm { font-weight: 600; flex: 1; }
+.rp-btns { display: flex; gap: 6px; }
+.rb { padding: 9px 14px; border-radius: 8px; border: 1px solid transparent; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s; touch-action: manipulation; }
+.rb:active { transform: scale(0.96); }
+.rb-w { background: rgba(201,168,76,0.12); color: var(--gold); border-color: rgba(201,168,76,0.3); }
+.rb-w.on { background: rgba(201,168,76,0.3); border-color: var(--gold); }
+.rb-l { background: rgba(192,57,43,0.1); color: var(--red); border-color: rgba(192,57,43,0.25); }
+.rb-l.on { background: rgba(192,57,43,0.28); border-color: var(--red); }
+.rp-pass { font-size: 0.72rem; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+
+/* Finance */
+.fin-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.92rem; }
+.fin-row:last-child { border-bottom: none; }
+.f-pos { color: #5dde8f; font-weight: 700; font-family: 'DM Mono', monospace; }
+.f-neg { color: var(--red); font-weight: 700; font-family: 'DM Mono', monospace; }
+.f-zer { color: var(--text-dim); font-family: 'DM Mono', monospace; }
+.tr { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.18); border-radius: 9px; padding: 10px 12px; margin-bottom: 6px; font-size: 0.88rem; }
+.tr-amt { font-weight: 700; font-family: 'DM Mono', monospace; color: var(--gold); margin-left: auto; }
+
+/* Acordo toggle */
+.ac-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.ac-row:last-child { border-bottom: none; }
+.tgl { width: 48px; height: 26px; background: rgba(100,100,100,0.3); border-radius: 13px; position: relative; cursor: pointer; transition: background 0.2s; border: none; flex-shrink: 0; }
+.tgl.on { background: var(--gold); }
+.tgl::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+.tgl.on::after { left: 25px; }
+
+/* History */
+.thist-wrap { overflow-x: auto; margin: -5px -14px -14px; padding: 5px 14px 14px; }
+.t-hist { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: center; }
+.t-hist th { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 0.72rem; color: var(--gold); padding: 8px 6px; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); white-space: nowrap; }
+.t-hist td { padding: 10px 6px; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; font-weight: 600; }
+.t-hist .hq { font-weight: 600; color: var(--text-dim); }
+.t-hist .hwin { color: var(--gold); }
+.t-hist .hlos { color: var(--red); }
+.t-hist .hpas { color: var(--text-dim); font-weight: 400; }
+.t-hist .helim { opacity: 0.2; }
+
+/* Modal */
+.ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.76); z-index: 100; align-items: flex-end; padding: 14px; }
+.ov.open { display: flex; }
+.modal { background: #0f3a22; border: 1px solid var(--border); border-radius: 18px 18px 14px 14px; padding: 20px; width: 100%; max-height: 80vh; overflow-y: auto; animation: su 0.22s ease; }
+.modal h2 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.15rem; margin-bottom: 5px; }
+.modal .sub { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 14px; }
+.empty { text-align: center; color: var(--text-dim); padding: 24px 0; font-size: 0.88rem; }
+
+/* Winner box */
+.win-box { text-align: center; padding: 16px 0; }
+.win-nm { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--gold); }
+.win-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 5px; }
+
+@keyframes si { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes su { from { transform:translateY(100%); } to { transform:translateY(0); } }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.55;} }
+.pulse { animation: pulse 1.4s infinite; }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="s-setup" class="screen active">
+  <div class="hdr"><h1>Caxeta</h1><p>nova partida</p></div>
+  <div class="body">
+    <div class="panel">
+      <div class="ptitle">Jogadores</div>
+      <div class="inp-row">
+        <input class="inp" id="pi" type="text" placeholder="Nome do jogador..." maxlength="18" autocomplete="off">
+        <button class="btn btn-p btn-icon" onclick="addP()">＋</button>
+      </div>
+      <div id="plist"></div>
+      <div id="pempty" class="empty">Nenhum jogador adicionado</div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Configuração</div>
+      <div class="cfg-row"><span>Valor da rodada (R$)</span><input class="num-inp" id="rval" type="number" value="5" min="1"></div>
+      <div class="cfg-row"><span>Pontos iniciais</span><input class="num-inp" id="ipts" type="number" value="10" min="3" max="20"></div>
+    </div>
+  </div>
+  <div class="foot"><button class="btn btn-p" id="startbtn" onclick="startGame()" disabled>Iniciar Partida</button></div>
+</div>
+
+<!-- GAME -->
+<div id="s-game" class="screen">
+  <div class="hdr"><h1>Caxeta</h1><p id="g-sub">rodada 1</p></div>
+  <div class="body">
+    <div class="top-bar">
+      <div class="badge" id="g-badge">RODADA 1</div>
+      <div class="dlr"><span class="dlr-dot"></span><span id="g-dlr">—</span> dá as cartas</div>
+    </div>
+    <div class="panel"><div class="ptitle">Placar</div><div id="g-score"></div></div>
+    <div class="panel" id="g-ac-panel" style="display:none;">
+      <div class="ptitle">⚖️ Acordo — Livramento</div>
+      <p style="font-size:0.78rem;color:var(--text-dim);margin-bottom:10px;">Quem for livrado não paga caso perca a próxima queda</p>
+      <div id="g-ac-list"></div>
+    </div>
+    <div class="panel"><div class="ptitle">Histórico</div><div id="g-hist"></div></div>
+  </div>
+  <div class="foot">
+    <button class="btn btn-back" onclick="showOv('ov-menu')">☰</button>
+    <button class="btn btn-p" onclick="goQueda()">Nova Queda</button>
+  </div>
+</div>
+
+<!-- QUEDA -->
+<div id="s-queda" class="screen">
+  <div class="hdr"><h1>Caxeta</h1><p id="q-sub">queda 1</p></div>
+  <div class="body">
+    <div class="panel"><div class="ptitle">Quem vai jogar esta queda?</div><div id="q-players"></div></div>
+  </div>
+  <div class="foot">
+    <button class="btn btn-back" onclick="goTo('s-game');renderGame()">←</button>
+    <button class="btn btn-p" id="q-btn" onclick="confirmQueda()">Confirmar</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="s-result" class="screen">
+  <div class="hdr"><h1>Caxeta</h1><p id="r-sub">resultado</p></div>
+  <div class="body">
+    <div class="panel"><div class="ptitle">Quem ganhou a queda?</div><div id="r-players"></div></div>
+  </div>
+  <div class="foot">
+    <button class="btn btn-back" onclick="goTo('s-queda');renderQueda()">←</button>
+    <button class="btn btn-p" id="r-btn" onclick="confirmResult()" disabled>Aplicar Resultado</button>
+  </div>
+</div>
+
+<!-- ROUND END -->
+<div id="s-end" class="screen">
+  <div class="hdr"><h1>Caxeta</h1><p>fim da rodada</p></div>
+  <div class="body">
+    <div class="panel"><div class="ptitle">🏆 Resultado</div><div class="win-box"><div class="win-nm" id="e-winner">—</div><div class="win-sub" id="e-winsub">ganhou a rodada!</div></div></div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="ptitle" style="margin:0;">💰 Financeiro da Rodada</div>
+        <button class="btn btn-s" style="width:auto;padding:5px 10px;font-size:0.7rem;margin:0;" onclick="showNeg()">Ajustar / Negociar</button>
+      </div>
+      <div id="e-fin"></div>
+    </div>
+    <div class="panel"><div class="ptitle">🏦 Saldo Total da Mesa</div><div id="e-glob"></div></div>
+    <div class="panel"><div class="ptitle">↔ Pagamentos Calculados</div><div id="e-tr"></div></div>
+  </div>
+  <div class="foot" style="flex-direction:column;gap:8px;">
+    <button class="btn btn-p" onclick="nextRound()">Nova Rodada</button>
+    <button class="btn btn-s" onclick="goSetup()">Encerrar Partida</button>
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="ov" id="ov-menu">
+  <div class="modal">
+    <h2>Menu</h2><p class="sub">Opções da partida</p>
+    <button class="btn btn-s" onclick="closeOv('ov-menu');showOv('ov-order')">⚙️ Ordem e Dealer</button>
+    <button class="btn btn-s" style="margin-top:8px;" onclick="closeOv('ov-menu');showOv('ov-ac')">⚖️ Gerenciar Acordos</button>
+    <button class="btn btn-s" style="margin-top:8px;" onclick="closeOv('ov-menu');showOv('ov-pl')">👥 Ver Jogadores</button>
+    <button class="btn btn-d" onclick="closeOv('ov-menu');showOv('ov-conf')">🏁 Encerrar Rodada</button>
+    <button class="btn btn-s" style="margin-top:8px;" onclick="closeOv('ov-menu')">Fechar</button>
+  </div>
+</div>
+
+<div class="ov" id="ov-order">
+  <div class="modal">
+    <h2>⚙️ Ordem e Mesa</h2>
+    <p class="sub">Mude a ordem, defina o dealer ou adicione/remova jogadores.</p>
+    <div class="inp-row" style="margin-bottom:14px;">
+      <input class="inp" id="opi" type="text" placeholder="Adicionar na mesa..." maxlength="18" autocomplete="off">
+      <button class="btn btn-p btn-icon" onclick="addPGame()">＋</button>
+    </div>
+    <div id="ov-order-list"></div>
+    <button class="btn btn-p" style="margin-top:12px;" onclick="closeOv('ov-order');renderGame()">Confirmar</button>
+  </div>
+</div>
+
+<div class="ov" id="ov-ac">
+  <div class="modal">
+    <h2>⚖️ Acordo de Livramento</h2>
+    <p class="sub">Jogadores livrados não pagam caso percam a última queda</p>
+    <div id="ov-ac-list"></div>
+    <button class="btn btn-p" style="margin-top:12px;" onclick="closeOv('ov-ac')">Confirmar</button>
+  </div>
+</div>
+
+<div class="ov" id="ov-pl">
+  <div class="modal">
+    <h2>👥 Jogadores</h2><p class="sub">Situação atual</p>
+    <div id="ov-pl-list"></div>
+    <button class="btn btn-p" style="margin-top:12px;" onclick="closeOv('ov-pl')">Fechar</button>
+  </div>
+</div>
+
+<div class="ov" id="ov-conf">
+  <div class="modal">
+    <h2>🏁 Encerrar Rodada?</h2>
+    <p class="sub">Irá calcular o resultado financeiro atual. Confirma?</p>
+    <button class="btn btn-d" onclick="closeOv('ov-conf');endRound()">Sim, encerrar</button>
+    <button class="btn btn-s" style="margin-top:8px;" onclick="closeOv('ov-conf')">Cancelar</button>
+  </div>
+</div>
+
+<div class="ov" id="ov-neg">
+  <div class="modal">
+    <h2>💸 Negociação / Ajuste</h2>
+    <p class="sub">Ajuste os valores que cada jogador vai receber (+) ou pagar (-) nesta rodada.</p>
+    <div id="ov-neg-list"></div>
+    <div style="display:flex; justify-content:space-between; margin-top:14px; font-size: 0.85rem; color: var(--text-dim);" id="ov-neg-sum">
+      Soma deve ser zero: <span>0</span>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="btn btn-p" id="ov-neg-save" onclick="saveNeg()">Salvar Valores</button>
+      <button class="btn btn-s" onclick="closeOv('ov-neg')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let G = {
+  players: [],   // {name, pts, elim, livre}
+  dealer: 0,
+  round: 1,
+  queda: 1,
+  playing: [],   // indices playing current queda
+  winner: null,
+  history: [],
+  finance: {},
+  globalFinance: {},
+  rval: 5,
+  ipts: 10
+};
+
+// ---- SETUP ----
+function addP() {
+  const inp = document.getElementById('pi');
+  const n = inp.value.trim();
+  if (!n) return;
+  if (G.players.find(p => p.name.toLowerCase() === n.toLowerCase())) { alert('Jogador já adicionado!'); return; }
+  if (G.players.length >= 8) { alert('Máximo 8 jogadores'); return; }
+  G.players.push({ name: n, pts: 10, elim: false, livre: false });
+  inp.value = '';
+  renderSetup();
+  inp.focus();
+}
+document.getElementById('pi').addEventListener('keydown', e => { if (e.key === 'Enter') addP(); });
+
+function removeP(i) { G.players.splice(i, 1); renderSetup(); }
+
+function renderSetup() {
+  const list = document.getElementById('plist');
+  const empty = document.getElementById('pempty');
+  list.innerHTML = '';
+  empty.style.display = G.players.length === 0 ? 'block' : 'none';
+  G.players.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'chip';
+    d.innerHTML = `<span class="co">${i+1}.</span><span class="cn">${p.name}</span><button class="cx" onclick="removeP(${i})">×</button>`;
+    list.appendChild(d);
+  });
+  document.getElementById('startbtn').disabled = G.players.length < 2;
+}
+
+function startGame() {
+  G.ipts = parseInt(document.getElementById('ipts').value) || 10;
+  G.rval = parseFloat(document.getElementById('rval').value) || 5;
+  G.players.forEach(p => { p.pts = G.ipts; p.elim = false; p.livre = false; });
+  G.dealer = 0; G.round = 1; G.queda = 1;
+  G.history = []; G.finance = {}; G.globalFinance = {}; G.potDistributed = false;
+  G.players.forEach(p => { G.finance[p.name] = 0; G.globalFinance[p.name] = 0; });
+  goTo('s-game');
+  renderGame();
+}
+
+// ---- GAME ----
+function renderGame() {
+  document.getElementById('g-sub').textContent = `rodada ${G.round}`;
+  document.getElementById('g-badge').textContent = `RODADA ${G.round}`;
+  // Fix dealer if eliminated
+  let d = G.dealer % G.players.length;
+  let attempts = 0;
+  while (G.players[d] && G.players[d].elim && attempts < G.players.length) { d = (d+1) % G.players.length; attempts++; }
+  G.dealer = d;
+  document.getElementById('g-dlr').textContent = G.players[d] ? G.players[d].name : '—';
+
+  const sb = document.getElementById('g-score');
+  sb.innerHTML = '';
+  G.players.forEach((p, i) => {
+    const isd = i === G.dealer && !p.elim;
+    const isb = p.pts === 1 && !p.elim;
+    const div = document.createElement('div');
+    div.className = 'pr' + (p.elim ? ' elim' : '') + (isb ? ' borr' : '');
+    const tags = [];
+    if (isd) tags.push(`<span class="tag t-d">dealer</span>`);
+    if (isb) tags.push(`<span class="tag t-b pulse">borracha</span>`);
+    if (p.elim) tags.push(`<span class="tag t-e">fora</span>`);
+    if (p.livre) tags.push(`<span class="tag t-l">livre</span>`);
+    div.innerHTML = `
+      <div class="p-ord">${i+1}</div>
+      <div style="flex:1">
+        <div class="p-nm">${p.name}</div>
+        ${tags.length ? `<div class="p-tags">${tags.join('')}</div>` : ''}
+      </div>
+      <div class="p-pts ${p.pts <= 2 && !p.elim ? 'low' : ''}">${p.elim ? '💀' : p.pts}</div>
+    `;
+    sb.appendChild(div);
+  });
+
+  // Acordo panel — show when 2 or fewer active
+  const active = G.players.filter(p => !p.elim);
+  const ap = document.getElementById('g-ac-panel');
+  const al = document.getElementById('g-ac-list');
+  if (active.length <= 2) {
+    ap.style.display = 'block';
+    al.innerHTML = '';
+    active.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'ac-row';
+      row.innerHTML = `<span style="font-weight:600">${p.name}</span><button class="tgl ${p.livre ? 'on' : ''}" onclick="toggleLivre('${p.name}')"></button>`;
+      al.appendChild(row);
+    });
+  } else { ap.style.display = 'none'; }
+
+  // History
+  const hl = document.getElementById('g-hist');
+  if (G.history.length === 0) { hl.innerHTML = '<div class="empty">Nenhuma queda ainda</div>'; return; }
+  
+  let ths = `<th>Q</th>`;
+  G.players.forEach(p => ths += `<th>${p.name.substring(0,8)}</th>`);
+
+  let trs = '';
+  G.history.forEach(h => {
+    let tds = `<td class="hq">${h.q}</td>`;
+    G.players.forEach(p => {
+      const c = h.changes[p.name];
+      if (!c) {
+        tds += `<td class="helim">—</td>`;
+      } else {
+        let v = c.newPts <= 0 ? '💀' : c.newPts;
+        if (c.status === 'win') tds += `<td class="hwin">✓(${v})</td>`;
+        else if (c.status === 'lose') tds += `<td class="hlos">${v}</td>`;
+        else if (c.status === 'pass') tds += `<td class="hpas">${v}</td>`;
+      }
+    });
+    trs += `<tr>${tds}</tr>`;
+  });
+
+  hl.innerHTML = `<div class="thist-wrap"><table class="t-hist"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+}
+
+function toggleLivre(name) {
+  const p = G.players.find(x => x.name === name);
+  if (p) p.livre = !p.livre;
+  renderGame();
+  renderOvAc();
+}
+
+// ---- QUEDA ----
+function goQueda() {
+  G.playing = [];
+  G.winner = null;
+  // Auto-add borrachas
+  G.players.forEach((p, i) => { if (p.pts === 1 && !p.elim) G.playing.push(i); });
+  goTo('s-queda');
+  renderQueda();
+}
+
+function renderQueda() {
+  document.getElementById('q-sub').textContent = `queda ${G.queda} — rodada ${G.round}`;
+  const c = document.getElementById('q-players');
+  c.innerHTML = '';
+  G.players.forEach((p, i) => {
+    if (p.elim) return;
+    const isb = p.pts === 1;
+    const playing = G.playing.includes(i);
+    const div = document.createElement('div');
+    div.className = 'qp' + (isb ? ' borr-f' : '');
+    div.innerHTML = `
+      <div class="qp-top">
+        <div class="qp-nm">${p.name}${isb ? ' 🔴' : ''}</div>
+        <div class="qp-pts ${p.pts <= 2 ? 'low' : ''}">${p.pts}pts</div>
+      </div>
+      <div class="qp-btns">
+        <button class="qb qb-y ${playing ? 'on' : ''}" onclick="setPlay(${i},true)" ${isb ? 'disabled' : ''}>✓ Joga</button>
+        <button class="qb qb-n ${!playing && hasDecision(i) ? 'on' : ''}" onclick="setPlay(${i},false)" ${isb ? 'disabled' : ''}>— Passa</button>
+      </div>
+      ${isb ? '<div class="borr-note">⚠ Borracha — obrigada a jogar esta queda</div>' : ''}
+    `;
+    c.appendChild(div);
+  });
+}
+
+function hasDecision(i) {
+  // Returns true if player was explicitly set to not play
+  return !G.playing.includes(i) && G._notPlaying && G._notPlaying.includes(i);
+}
+
+// Track not-playing explicitly
+if (!G._notPlaying) G._notPlaying = [];
+
+function setPlay(i, play) {
+  if (G.players[i].pts === 1) return;
+  if (play) {
+    if (!G.playing.includes(i)) G.playing.push(i);
+    G._notPlaying = (G._notPlaying || []).filter(x => x !== i);
+  } else {
+    G.playing = G.playing.filter(x => x !== i);
+    if (!G._notPlaying) G._notPlaying = [];
+    if (!G._notPlaying.includes(i)) G._notPlaying.push(i);
+  }
+  renderQueda();
+}
+
+function confirmQueda() {
+  if (G.playing.length === 0) { alert('Pelo menos um jogador precisa jogar!'); return; }
+  G.winner = null;
+  goTo('s-result');
+  renderResult();
+}
+
+// ---- RESULT ----
+function renderResult() {
+  document.getElementById('r-sub').textContent = `resultado — queda ${G.queda}`;
+  const c = document.getElementById('r-players');
+  c.innerHTML = '';
+  G.playing.forEach(i => {
+    const p = G.players[i];
+    const div = document.createElement('div');
+    div.className = 'rp';
+    div.innerHTML = `
+      <div class="rp-nm">${p.name}</div>
+      <div class="rp-btns">
+        <button class="rb rb-w ${G.winner === i ? 'on' : ''}" onclick="setWinner(${i})">🏆 Ganhou</button>
+        <button class="rb rb-l ${G.winner !== null && G.winner !== i ? 'on' : ''}" onclick="${G.playing.length===2 ? `setWinner(${G.playing.find(x=>x!==i)})` : ''}">✗ Perdeu</button>
+      </div>
+    `;
+    c.appendChild(div);
+  });
+  // Non-playing
+  G.players.forEach((p, i) => {
+    if (p.elim || G.playing.includes(i)) return;
+    const div = document.createElement('div');
+    div.className = 'rp';
+    div.innerHTML = `<div class="rp-nm">${p.name}</div><div class="rp-pass">passou (−1pt)</div>`;
+    c.appendChild(div);
+  });
+  document.getElementById('r-btn').disabled = G.winner === null;
+}
+
+function setWinner(idx) {
+  G.winner = idx;
+  renderResult();
+  document.getElementById('r-btn').disabled = false;
+}
+
+function confirmResult() {
+  if (G.winner === null) { alert('Selecione quem ganhou!'); return; }
+  
+  // Guardamos o iniciador desta queda ANTES de aplicar as eliminações
+  let oldInic = (G.dealer + 1) % G.players.length;
+  let att0 = 0;
+  while (G.players[oldInic].elim && att0 < G.players.length) {
+    oldInic = (oldInic + 1) % G.players.length;
+    att0++;
+  }
+
+  const changes = {};
+  const winner = G.players[G.winner];
+
+  G.players.forEach((p, i) => {
+    if (p.elim) return;
+    if (G.playing.includes(i)) {
+      if (i === G.winner) {
+        changes[p.name] = { status: 'win', newPts: p.pts };
+      } else {
+        p.pts -= 2;
+        changes[p.name] = { status: 'lose', newPts: p.pts };
+      }
+    } else {
+      p.pts -= 1;
+      changes[p.name] = { status: 'pass', newPts: p.pts };
+    }
+  });
+
+  // Eliminations & Finance
+  const elimed = [];
+  G.players.forEach(p => {
+    if (!p.elim && p.pts <= 0) { 
+      p.elim = true; 
+      elimed.push(p.name); 
+      if (!p.livre) {
+        G.finance[p.name] = (G.finance[p.name] || 0) - G.rval;
+      }
+    }
+  });
+
+  // Reset livres
+  G.players.forEach(p => p.livre = false);
+
+  G.history.push({ q: G.queda, w: winner.name, changes });
+
+  // Avança o dealer com base no iniciador
+  const getNextA = (i) => {
+    let c = (i + 1) % G.players.length; let a = 0;
+    while (G.players[c].elim && a < G.players.length) { c = (c+1)%G.players.length; a++; }
+    return c;
+  };
+  const getPrevA = (i) => {
+    let c = (i - 1 + G.players.length) % G.players.length; let a = 0;
+    while (G.players[c].elim && a < G.players.length) { c = (c - 1 + G.players.length)%G.players.length; a++; }
+    return c;
+  };
+
+  const newInic = getNextA(oldInic);
+  G.dealer = getPrevA(newInic);
+
+  G.queda++;
+  G._notPlaying = [];
+
+  const stillActive = G.players.filter(p => !p.elim);
+  if (stillActive.length <= 1) { endRound(); return; }
+
+  goTo('s-game');
+  renderGame();
+
+  if (elimed.length > 0) {
+    setTimeout(() => alert(`${elimed.join(' e ')} ficou sem pontos — fora da rodada! 💀`), 300);
+  }
+}
+
+// ---- ROUND END ----
+function endRound() {
+  const active = G.players.filter(p => !p.elim);
+  const w = active.length === 1 ? active[0] : null;
+  document.getElementById('e-winner').textContent = w ? w.name : (active.length > 1 ? active.map(p=>p.name).join(' & ') : '—');
+  document.getElementById('e-winsub').textContent = w ? 'ganhou a rodada! 🎉' : 'rodada encerrada';
+
+  if (!G.potDistributed) {
+    let pot = 0;
+    Object.values(G.finance).forEach(v => { if (v < 0) pot += Math.abs(v); });
+    if (active.length > 0 && pot > 0) {
+      const share = pot / active.length;
+      active.forEach(p => G.finance[p.name] = (G.finance[p.name] || 0) + share);
+    }
+    G.potDistributed = true;
+  }
+
+  renderEndScreen();
+  goTo('s-end');
+}
+
+function renderEndScreen() {
+  const fl = document.getElementById('e-fin');
+  fl.innerHTML = '';
+  const globEl = document.getElementById('e-glob');
+  globEl.innerHTML = '';
+
+  const combinedBal = {};
+  const allNames = Array.from(new Set([...G.players.map(p=>p.name), ...Object.keys(G.globalFinance), ...Object.keys(G.finance)]));
+
+  allNames.forEach(name => {
+    const inGame = G.players.find(x=>x.name === name);
+    const d = G.finance[name] || 0;
+    const gb = (G.globalFinance[name] || 0) + d;
+    combinedBal[name] = gb;
+
+    if (inGame || d !== 0) {
+      const div = document.createElement('div');
+      div.className = 'fin-row';
+      const cls = d > 0 ? 'f-pos' : d < 0 ? 'f-neg' : 'f-zer';
+      const sign = d > 0 ? '+' : (d < 0 ? '-' : '');
+      div.innerHTML = `<span>${name}${inGame ? '' : ' <span style="font-size:0.6rem;color:#777;">(saiu)</span>'}</span><span class="${cls}">${sign}R$${Math.abs(d).toFixed(2)}</span>`;
+      fl.appendChild(div);
+    }
+
+    if (inGame || gb !== 0) {
+      const divG = document.createElement('div');
+      divG.className = 'fin-row';
+      const clsG = gb > 0 ? 'f-pos' : gb < 0 ? 'f-neg' : 'f-zer';
+      const signG = gb > 0 ? '+' : (gb < 0 ? '-' : '');
+      divG.innerHTML = `<span>${name}${inGame ? '' : ' <span style="font-size:0.6rem;color:#777;">(saiu)</span>'}</span><span class="${clsG}">${signG}R$${Math.abs(gb).toFixed(2)}</span>`;
+      globEl.appendChild(divG);
+    }
+  });
+
+  const transfers = calcT(combinedBal);
+  const tl = document.getElementById('e-tr');
+  tl.innerHTML = '';
+  if (transfers.length === 0) { tl.innerHTML = '<div class="empty">Nenhum pagamento necessário</div>'; }
+  else transfers.forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'tr';
+    d.innerHTML = `<span>${t.from}</span><span style="color:var(--gold)">→</span><span>${t.to}</span><span class="tr-amt">R$${t.amount.toFixed(2)}</span>`;
+    tl.appendChild(d);
+  });
+}
+
+function calcT(bal) {
+  const deb = Object.entries(bal).filter(([,v])=>v<0).map(([n,v])=>({name:n,amt:-v}));
+  const cre = Object.entries(bal).filter(([,v])=>v>0).map(([n,v])=>({name:n,amt:v}));
+  const out = [];
+  deb.forEach(d => {
+    let r = d.amt;
+    cre.forEach(c => {
+      if (r <= 0 || c.amt <= 0) return;
+      const pay = Math.min(r, c.amt);
+      out.push({from: d.name, to: c.name, amount: pay});
+      r -= pay; c.amt -= pay;
+    });
+  });
+  return out;
+}
+
+function nextRound() {
+  const nv = prompt(`Valor da rodada ${G.round+1} (atual: R$${G.rval}):`, G.rval);
+  if (nv !== null && !isNaN(parseFloat(nv))) G.rval = parseFloat(nv);
+  
+  // Acumular saldo no global antes de zerar a rodada
+  G.players.forEach(p => G.globalFinance[p.name] = (G.globalFinance[p.name] || 0) + (G.finance[p.name] || 0));
+  
+  G.round++; G.queda = 1; G.history = []; G.finance = {}; G._notPlaying = []; G.potDistributed = false;
+  G.players.forEach(p => { p.pts = G.ipts; p.elim = false; p.livre = false; G.finance[p.name] = 0; });
+  G.dealer = (G.dealer + 1) % G.players.length;
+  goTo('s-game');
+  renderGame();
+}
+
+function goSetup() {
+  if (confirm('Encerrar partida e voltar ao início?')) { G.players = []; goTo('s-setup'); renderSetup(); }
+}
+
+// ---- OVERLAYS ----
+function showNeg() {
+  const list = document.getElementById('ov-neg-list');
+  list.innerHTML = '';
+  G.players.forEach(p => {
+    const d = G.finance[p.name] || 0;
+    const row = document.createElement('div');
+    row.className = 'cfg-row';
+    row.innerHTML = `<span style="font-weight:600">${p.name}</span><input class="num-inp neg-inp" data-name="${p.name}" type="number" step="1" value="${d}">`;
+    list.appendChild(row);
+  });
+  updateNegSum();
+  // We need timeout so the DOM registers elements before attaching listeners
+  setTimeout(() => {
+    document.querySelectorAll('.neg-inp').forEach(i => i.addEventListener('input', updateNegSum));
+  }, 50);
+  showOv('ov-neg');
+}
+
+function updateNegSum() {
+  let sum = 0;
+  document.querySelectorAll('.neg-inp').forEach(i => sum += parseFloat(i.value) || 0);
+  const sEl = document.getElementById('ov-neg-sum');
+  sEl.innerHTML = `Soma (deve ser zero): <span style="font-weight:bold; color:${sum===0 ? 'var(--gold)' : 'var(--red)'}">${sum.toFixed(2)}</span>`;
+  document.getElementById('ov-neg-save').disabled = sum !== 0;
+}
+
+function saveNeg() {
+  document.querySelectorAll('.neg-inp').forEach(i => {
+    const name = i.getAttribute('data-name');
+    G.finance[name] = parseFloat(i.value) || 0;
+  });
+  closeOv('ov-neg');
+  renderEndScreen();
+}
+
+function renderOvAc() {
+  const list = document.getElementById('ov-ac-list');
+  list.innerHTML = '';
+  G.players.filter(p => !p.elim).forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'ac-row';
+    row.innerHTML = `<span style="font-weight:600">${p.name}</span><button class="tgl ${p.livre ? 'on' : ''}" onclick="toggleLivre('${p.name}');renderOvAc()"></button>`;
+    list.appendChild(row);
+  });
+}
+
+function renderOvOrder() {
+  const list = document.getElementById('ov-order-list');
+  list.innerHTML = '';
+  G.players.forEach((p, i) => {
+    const isd = (i === G.dealer);
+    const row = document.createElement('div');
+    row.className = 'pr';
+    row.innerHTML = `
+      <div style="display:flex;width:100%;align-items:center;gap:5px;">
+        <div class="p-ord">${i+1}</div>
+        <div style="flex:1" class="p-nm">${p.name}</div>
+        <div style="display:flex;gap:5px;">
+          <button class="btn-s" style="padding:6px;width:34px;font-size:0.85rem;border-radius:6px; font-weight:900; background:${isd ? 'var(--gold)' : ''}; color:${isd ? 'var(--green-deep)' : ''}" onclick="setDealerObj(${i})">D</button>
+          <button class="btn-s" style="padding:6px;width:34px;font-size:0.85rem;border-radius:6px;" onclick="movePObj(${i}, -1)" ${i===0?'disabled':''}>↑</button>
+          <button class="btn-s" style="padding:6px;width:34px;font-size:0.85rem;border-radius:6px;" onclick="movePObj(${i}, 1)" ${i===G.players.length-1?'disabled':''}>↓</button>
+          <button class="btn-d" style="padding:4px;width:30px;font-size:1.1rem;border-radius:6px; margin:0;" onclick="removePObj('${p.name}')">×</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  // Mostra quem saiu e tem histórico global, para facilitar o retorno
+  const foraDaMesa = Object.keys(G.globalFinance).filter(n => !G.players.find(p => p.name === n));
+  if (foraDaMesa.length > 0) {
+    const ptitle = document.createElement('div');
+    ptitle.className = 'ptitle';
+    ptitle.style.margin = '14px 0 8px 0';
+    ptitle.style.opacity = '0.75';
+    ptitle.textContent = 'Bancada (Fora da mesa)';
+    list.appendChild(ptitle);
+
+    foraDaMesa.forEach(name => {
+      const row = document.createElement('div');
+      row.className = 'pr';
+      row.style.opacity = '0.65';
+      row.style.marginBottom = '6px';
+      row.style.padding = '8px 12px';
+      row.innerHTML = `
+        <div style="flex:1" class="p-nm">${name}</div>
+        <button class="btn-s" style="padding:5px 10px;font-size:0.75rem;border-radius:6px;width:auto;" onclick="retornarPObj('${name}')">Voltar à mesa</button>
+      `;
+      list.appendChild(row);
+    });
+  }
+}
+
+function retornarPObj(name) {
+  if (G.players.length >= 8) { alert('A mesa chegou ao limite de 8 jogadores!'); return; }
+  G.players.push({ name: name, pts: G.ipts, elim: false, livre: false });
+  // O financeiro global dele já existe e não será apagado. Garante apenas inicialização da rodada:
+  if (G.finance[name] === undefined) G.finance[name] = 0;
+  renderOvOrder();
+}
+
+function removePObj(name) {
+  if (G.players.length <= 2) { alert('Mínimo de 2 jogadores!'); return; }
+  G.players = G.players.filter(p => p.name !== name);
+  if (G.dealer >= G.players.length) G.dealer = 0;
+  renderOvOrder();
+}
+
+function addPGame() {
+  const inp = document.getElementById('opi');
+  let n = inp.value.trim();
+  if (!n) return;
+  if (G.players.find(p => p.name.toLowerCase() === n.toLowerCase())) { alert('Jogador já está na mesa!'); return; }
+  if (G.players.length >= 8) { alert('A mesa chegou ao limite de 8 jogadores!'); return; }
+  
+  // Unifica nomes para não gerar "João" e "joao" com saldos diferentes
+  const existGlobal = Object.keys(G.globalFinance).find(k => k.toLowerCase() === n.toLowerCase());
+  if (existGlobal) n = existGlobal;
+
+  G.players.push({ name: n, pts: G.ipts, elim: false, livre: false });
+  if (G.finance[n] === undefined) G.finance[n] = 0;
+  if (G.globalFinance[n] === undefined) G.globalFinance[n] = 0;
+  
+  inp.value = '';
+  renderOvOrder();
+}
+
+function setDealerObj(i) {
+  G.dealer = i;
+  renderOvOrder();
+}
+
+function movePObj(i, dir) {
+  const ni = i + dir;
+  if(ni < 0 || ni >= G.players.length) return;
+  
+  const temp = G.players[i];
+  G.players[i] = G.players[ni];
+  G.players[ni] = temp;
+  
+  if (G.dealer === i) G.dealer = ni;
+  else if (G.dealer === ni) G.dealer = i;
+  
+  renderOvOrder();
+}
+
+function renderOvPl() {
+  const list = document.getElementById('ov-pl-list');
+  list.innerHTML = '';
+  G.players.forEach((p, i) => {
+    const isd = i === G.dealer && !p.elim;
+    const isb = p.pts === 1 && !p.elim;
+    const div = document.createElement('div');
+    div.className = 'pr' + (p.elim ? ' elim' : '') + (isb ? ' borr' : '');
+    div.style.marginBottom = '8px';
+    const tags = [];
+    if (isd) tags.push(`<span class="tag t-d">dealer</span>`);
+    if (isb) tags.push(`<span class="tag t-b">borracha</span>`);
+    if (p.elim) tags.push(`<span class="tag t-e">fora</span>`);
+    if (p.livre) tags.push(`<span class="tag t-l">livre</span>`);
+    div.innerHTML = `
+      <div class="p-ord">${i+1}</div>
+      <div style="flex:1"><div class="p-nm">${p.name}</div>${tags.length ? `<div class="p-tags">${tags.join('')}</div>` : ''}</div>
+      <div class="p-pts ${p.pts <= 2 && !p.elim ? 'low' : ''}">${p.elim ? '💀' : p.pts}</div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function showOv(id) {
+  if (id === 'ov-ac') renderOvAc();
+  if (id === 'ov-pl') renderOvPl();
+  if (id === 'ov-order') renderOvOrder();
+  document.getElementById(id).classList.add('open');
+}
+function closeOv(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.ov').forEach(el => { el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); }); });
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+renderSetup();
+</script>
+</body>
+</html>
